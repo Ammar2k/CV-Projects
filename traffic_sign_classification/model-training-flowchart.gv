@@ -1,0 +1,18 @@
+// Model Training Flowchart
+digraph {
+	A [label="Import and Preprocess Images"]
+	B [label="Split Train/Test/Validation Data"]
+	C [label="Define Model Architecture"]
+	D [label="Compile Model"]
+	E [label="Train Model"]
+	F [label="Evaluate Model"]
+	G [label="Plot Loss and Accuracy"]
+	H [label="Predict Images"]
+	A -> B
+	B -> C
+	C -> D
+	D -> E
+	E -> F
+	F -> G
+	G -> H
+}
