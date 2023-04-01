@@ -1,11 +1,15 @@
-import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 import os
 import shutil
 import random
 import glob
 from keras.preprocessing.image import ImageDataGenerator
+from keras.layers import *
+from keras.models import *
+from keras.optimizers import Adam
+from keras.metrics import categorical_crossentropy
+from keras.regularizers import l2
+import pickle
 
 # To Use GPU for training
 # physical_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -47,46 +51,29 @@ if not os.path.exists(train_dir):
             new_file_name = '{}_{}'.format(dir, file_name)
             shutil.copyfile(file, os.path.join(dest_dir, new_file_name))
 
+train_images = ImageDataGenerator(preprocessing_function=tf.keras.applications.vgg16.preprocess_input) \
+    .flow_from_directory(directory=train_dir, target_size=(224, 224), classes=['Cat', 'Dog'], batch_size=10)
+valid_images = ImageDataGenerator(preprocessing_function=tf.keras.applications.vgg16.preprocess_input) \
+    .flow_from_directory(directory=valid_dir, target_size=(224, 224), classes=['Cat', 'Dog'], batch_size=10)
+test_images = ImageDataGenerator(preprocessing_function=tf.keras.applications.vgg16.preprocess_input) \
+    .flow_from_directory(directory=test_dir, target_size=(224, 224), classes=['Cat', 'Dog'], batch_size=10, shuffle=False)
 
-def get_class_label(file_path):
-    # extract the class label from the file path
-    parts = tf.strings.split(file_path, os.path.sep)
-    return parts[-2]
+model = Sequential([
+    Conv2D(filters=32, kernel_size=(3, 3), activation='relu', input_shape=(224, 224, 3), kernel_regularizer=l2(0.01)),
+    BatchNormalization(),
+    MaxPooling2D(pool_size=(2, 2), strides=2),
+    Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_regularizer=l2(0.01)),
+    BatchNormalization(),
+    MaxPooling2D(pool_size=(2, 2), strides=2),
+    Flatten(),
+    Dense(units=2, activation='softmax')
+])
 
+model.summary()
 
-train_data_gen = ImageDataGenerator(
-    rescale=1./255,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    validation_split=0.2,
-    preprocessing_function=get_class_label
-)
+model.compile(optimizer=Adam(learning_rate=0.0001), loss=categorical_crossentropy, metrics=['accuracy'])
 
-batch_size = 32
+model.fit(x=train_images, validation_data=valid_images, epochs=10, verbose=2)
 
-train_generator = train_data_gen.flow_from_directory(
-    train_dir,
-    target_size=(150, 150),
-    batch_size=batch_size,
-    class_mode='binary',
-    subset='training',
-    shuffle=True
-)
-
-valid_generator = train_data_gen.flow_from_directory(
-    valid_dir,
-    target_size=(150, 150),
-    batch_size=batch_size,
-    class_mode='binary',
-    subset='validation',
-    shuffle=True
-)
-
-test_generator = train_data_gen.flow_from_directory(
-    test_dir,
-    target_size=(150, 150),
-    batch_size=batch_size,
-    class_mode='binary',
-    shuffle=True
-)
+with open('model.pkl', 'wb') as f:
+    pickle.dump(model, f)
