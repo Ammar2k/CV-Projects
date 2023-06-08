@@ -11,8 +11,5 @@ This repository contains some computer vision projects that I have done using Py
 
 ## Installation
 
-To run these projects, you need to have Python 3 and OpenCV installed on your machine. You can install them using pip:
-pip install python pip install opencv-python
-
-You also need to clone this repository or download the zip file:
+Clone this repository or download the zip file:
 git clone https://github.com/Ammar2k/cv-projects.git
